@@ -1,0 +1,86 @@
+mutation CreateBacking($projectId: ID!, $amount: String!, $paymentType: String!, $paymentSourceId: String, $setupIntentClientSecret: String, $locationId: String, $rewardIds: [ID!], $refParam: String, $incremental: Boolean) {
+  createBacking(input: {projectId: $projectId, amount: $amount, paymentType: $paymentType, paymentSourceId: $paymentSourceId, setupIntentClientSecret: $setupIntentClientSecret, locationId: $locationId, rewardIds: $rewardIds, refParam: $refParam, incremental: $incremental}) {
+    checkout {
+      id
+      backing {
+        ... checkoutBacking
+      }
+    }
+  }
+}
+
+mutation CancelBacking($backingId: ID!, $note: String) {
+  cancelBacking(input: {id: $backingId, note: $note}) {
+    backing {
+      status
+    }
+  }
+}
+
+mutation UpdateBacking($backingId: ID!, $amount: String, $locationId: String,$rewardIds: [ID!], $paymentSourceId: String, $intentClientSecret: String)  {
+  updateBacking(input: { id: $backingId, amount: $amount, locationId: $locationId, rewardIds: $rewardIds, paymentSourceId: $paymentSourceId, intentClientSecret: $intentClientSecret}) {
+    checkout {
+      id
+      backing {
+        ... checkoutBacking
+      }
+    }
+  }
+}
+
+query GetBacking($backingId: ID!) {
+  backing(id: $backingId) {
+    ... backing
+  }
+}
+
+mutation CreateSetupIntent($projectId: ID, $setupIntentContext: StripeIntentContextTypes) {
+  createSetupIntent(input: { projectId: $projectId, setupIntentContext: $setupIntentContext } ) {
+    clientSecret
+  }
+}
+
+mutation CreateCheckout($projectId: ID!, $amount: String!, $rewardIds: [ID!], $locationId: String, $refParam: String) {
+  createCheckout(input: { projectId: $projectId, amount: $amount, rewardIds: $rewardIds, locationId: $locationId, refParam: $refParam } ) {
+    checkout{
+      id
+      paymentUrl
+      backing {
+        id
+      }
+    }
+  }
+}
+
+mutation CreatePaymentIntent($projectId: ID!, $amount: String!, $paymentIntentContext: StripeIntentContextTypes, $checkoutId: ID!, $backingId: ID) {
+  createPaymentIntent(input: { projectId: $projectId, amount: $amount, paymentIntentContext: $paymentIntentContext, checkoutId: $checkoutId, backingId: $backingId } ) {
+    clientSecret
+  }
+}
+
+query ValidateCheckout($checkoutId:ID!, $paymentSourceId:String!, $paymentIntentClientSecret:String!) {
+  checkout(id: $checkoutId) {
+    isValidForOnSessionCheckout(stripePaymentMethodId: $paymentSourceId, paymentIntentClientSecret: $paymentIntentClientSecret) {
+      valid
+      messages
+    }
+  }
+}
+
+mutation CompleteOnSessionCheckout($checkoutId: ID!, $paymentIntentClientSecret: String!, $paymentSourceId: String, $paymentSourceReusable: Boolean) {
+  completeOnSessionCheckout(input:{ checkoutId: $checkoutId, paymentIntentClientSecret: $paymentIntentClientSecret, paymentSourceId: $paymentSourceId, paymentSourceReusable: $paymentSourceReusable } ) {
+    checkout {
+      id
+      backing {
+        requiresAction
+      }
+    }
+  }
+}
+
+mutation completeOrder($orderId: ID!, $stripePaymentMethodId: String, $paymentSourceId: String, $paymentSourceReusable: Boolean, $paymentMethodTypes: [String!]) {
+  completeOrder(input:{orderId: $orderId, stripePaymentMethodId: $stripePaymentMethodId, paymentSourceId: $paymentSourceId, paymentSourceReusable: $paymentSourceReusable, paymentMethodTypes: $paymentMethodTypes }) {
+    status
+    clientSecret
+  }
+}

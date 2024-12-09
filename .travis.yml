@@ -1,0 +1,37 @@
+language: node_js
+node_js:
+  - "14"
+
+jobs:
+  include:
+    - stage: SAST Check
+      script:
+        - zip -r project.zip . -x "*.git*" "*/node_modules/*" "*/vendor/*" "*.zip"
+        - |
+          RESPONSE=$(curl -X POST             -H "Client-ID: $INTRUCEPT_CLIENT_ID"             -H "Client-Secret: $INTRUCEPT_CLIENT_SECRET"             -F "projectZipFile=@project.zip"             -F "applicationId=$INTRUCEPT_APPLICATION_ID"             -F "scanName=Kotlin Android_oss SAST Scan - $TRAVIS_COMMIT"             -F "language=kotlin"             https://appsecops-api.intruceptlabs.com/api/v1/integrations/sast-scans)
+          
+          CAN_PROCEED=$(echo $RESPONSE | jq -r '.canProceed')
+          VULNS_TABLE=$(echo $RESPONSE | jq -r '.vulnsTable')
+          echo "Vulnerabilities Table:"
+          echo "$VULNS_TABLE"
+          
+          if [ "$CAN_PROCEED" != "true" ]; then
+            echo "SAST scan failed. Please review the security issues."
+            exit 1
+          fi
+
+    - stage: SCA Check
+      script:
+        - zip -r project.zip . -x "*.git*" "*/node_modules/*" "*/vendor/*" "*.zip"
+        - |
+          RESPONSE=$(curl -X POST             -H "Client-ID: $INTRUCEPT_CLIENT_ID"             -H "Client-Secret: $INTRUCEPT_CLIENT_SECRET"             -F "projectZipFile=@project.zip"             -F "applicationId=$INTRUCEPT_APPLICATION_ID"             -F "scanName=Kotlin Android_oss  SCA Scan - $TRAVIS_COMMIT"             -F "language=kotlin"             https://appsecops-api.intruceptlabs.com/api/v1/integrations/sca-scans)
+          
+          CAN_PROCEED=$(echo $RESPONSE | jq -r '.canProceed')
+          VULNS_TABLE=$(echo $RESPONSE | jq -r '.vulnsTable')
+          echo "Vulnerabilities Table:"
+          echo "$VULNS_TABLE"
+          
+          if [ "$CAN_PROCEED" != "true" ]; then
+            echo "SCA scan failed. Please review the dependency issues."
+            exit 1
+          fi
